@@ -133,13 +133,37 @@ function renderGrid(puzzleData, solutionData = null) {
                         return;
                     }
                     const num = parseInt(v, 10);
+
+                    // Always set the value first so the user sees what they typed
                     e.target.value = num;
-                    cell.classList.remove('error');
-                    if (!validateInput(i, j, num)) {
+
+                    // Strict validation against the solution
+                    if (solution && solution[i][j] !== num) {
                         cell.classList.add('error');
-                        showMessage('Duplicate in row, column, or 3×3 box', 'error');
-                    } else {
-                        clearMessage();
+                        showMessage('Incorrect value', 'error');
+
+                        // Clear the wrong value after a short delay
+                        setTimeout(() => {
+                            e.target.value = '';
+                            cell.classList.remove('error');
+                            // Only clear message if it hasn't changed
+                            if (messageEl.textContent === 'Incorrect value') {
+                                clearMessage();
+                            }
+                        }, 500);
+                        return;
+                    }
+
+                    cell.classList.remove('error');
+                    clearMessage();
+
+                    // Visual feedback for correct input
+                    cell.classList.add('success-flash');
+                    setTimeout(() => cell.classList.remove('success-flash'), 500);
+
+                    // Check if game is complete
+                    if (getBoardState().every((row, r) => row.every((val, c) => val !== 0))) {
+                        checkSolution();
                     }
                 });
                 input.addEventListener('keydown', (e) => {
