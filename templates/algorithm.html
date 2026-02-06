@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku | Algorithm & CSP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-pattern"></div>
+    
+    <main class="game-container algorithm-page">
+        <header class="game-header">
+            <h1>Algorithm & CSP</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">← Play Game</a>
+        </header>
+
+        <div class="algorithm-content">
+            <section>
+                <h2>1. What is CSP?</h2>
+                <p>A <strong>Constraint Satisfaction Problem (CSP)</strong> has three parts:</p>
+                <ul>
+                    <li><strong>Variables:</strong> The unknowns we must assign (81 cells in Sudoku)</li>
+                    <li><strong>Domains:</strong> The set of possible values for each variable (1–9 for empty cells)</li>
+                    <li><strong>Constraints:</strong> Rules that must hold (no duplicates in row, column, or 3×3 box)</li>
+                </ul>
+                <p>Solving a CSP means finding an assignment of values to variables such that all constraints are satisfied.</p>
+            </section>
+
+            <section>
+                <h2>2. Sudoku as a CSP</h2>
+                <p><strong>Variables:</strong> Each cell (i, j) for i, j = 0..8</p>
+                <p><strong>Domains:</strong> Empty cells → {1, 2, 3, 4, 5, 6, 7, 8, 9}; prefilled cells → {their fixed value}</p>
+                <p><strong>Constraints:</strong></p>
+                <ul>
+                    <li>Row: All 9 cells in each row must be different</li>
+                    <li>Column: All 9 cells in each column must be different</li>
+                    <li>Box: All 9 cells in each 3×3 region must be different</li>
+                </ul>
+                <p>Each cell has 20 <em>peers</em> (cells in the same row, column, or box). A value placed in one cell cannot appear in any of its peers.</p>
+            </section>
+
+            <section>
+                <h2>3. How the Solver Works</h2>
+                <h3>Step 1: AC-3 (Arc Consistency)</h3>
+                <p>Before searching, we prune domains. If a cell has only one possible value, we remove that value from all its peers. This propagates until no more changes. Many easy puzzles are solved entirely by AC-3 without backtracking.</p>
+                
+                <h3>Step 2: Backtracking Search</h3>
+                <p>For remaining empty cells, we use recursive backtracking:</p>
+                <ol>
+                    <li><strong>MRV (Minimum Remaining Values):</strong> Pick the cell with the fewest legal values. This fails fast when a cell has no options.</li>
+                    <li><strong>LCV (Least Constraining Value):</strong> For that cell, try values that remove the fewest options from peers first.</li>
+                    <li><strong>Forward Checking:</strong> When we assign a value, remove it from all peers’ domains. If any peer’s domain becomes empty, backtrack immediately.</li>
+                    <li><strong>Backtrack:</strong> If a branch fails, undo the assignment and try the next value.</li>
+                </ol>
+            </section>
+
+            <section>
+                <h2>4. AI Solve with Conflict Detection</h2>
+                <p>When you click <strong>AI Solve</strong> and have made some mistakes:</p>
+                <ol>
+                    <li><strong>Find Conflicts:</strong> Compare your board to the original puzzle. For each cell you filled, check if its value duplicates in its row, column, or 3×3 box.</li>
+                    <li><strong>Clear Errors:</strong> Set conflicting cells back to empty. Prefilled cells stay unchanged.</li>
+                    <li><strong>Solve:</strong> Run the CSP solver (AC-3 + MRV + LCV + forward checking) on the cleaned board.</li>
+                    <li><strong>Report:</strong> Show which cells had errors and why, then display the complete solution.</li>
+                </ol>
+            </section>
+
+            <section>
+                <h2>5. Pseudocode</h2>
+                <pre class="pseudocode">function solve_sudoku_csp(board):
+    domains = board_to_domains(board)
+    if not ac3(domains): return failure
+    
+    function backtrack(domains):
+        cell = get_unassigned_mrv(domains)
+        if cell is None: return success
+        for value in lcv_order(cell, domains):
+            assign value to cell
+            removals = remove_from_peers(domains, cell, value)
+            if no peer has empty domain:
+                if backtrack(domains): return success
+            undo assignment and restore removals
+        return failure
+    
+    return backtrack(domains)</pre>
+            </section>
+
+            <section>
+                <h2>6. Files & References</h2>
+                <ul>
+                    <li><strong>CSP_REQUIREMENTS.txt</strong> – Formal CSP requirements and implementation details</li>
+                    <li><strong>app.py</strong> – CSP solver implementation (PEERS, ac3, get_unassigned_mrv, lcv_order, solve_sudoku_csp)</li>
+                </ul>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

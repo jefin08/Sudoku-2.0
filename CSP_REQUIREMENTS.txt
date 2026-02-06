@@ -1,0 +1,112 @@
+================================================================================
+CSP (CONSTRAINT SATISFACTION PROBLEM) - REQUIREMENTS AND DETAILS
+Sudoku AI Solver
+================================================================================
+
+1. CSP FORMAL DEFINITION
+--------------------------------------------------------------------------------
+
+A Constraint Satisfaction Problem consists of:
+  - Variables:   Unknowns to be assigned
+  - Domains:     Set of allowed values for each variable
+  - Constraints: Relations that must hold between variables
+
+Sudoku as CSP:
+  - Variables:   81 cells (i, j) where i, j ∈ {0..8}
+  - Domains:     Empty cell: D(i,j) = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+                 Prefilled cell: D(i,j) = {fixed value}
+  - Constraints: AllDifferent on each row, column, and 3×3 box
+                 - 9 row constraints (one per row)
+                 - 9 column constraints (one per column)
+                 - 9 box constraints (one per 3×3 region)
+
+Mathematical notation:
+  - X_i,j = variable at row i, column j
+  - For each row i:   AllDifferent(X_i,0, X_i,1, ..., X_i,8)
+  - For each col j:   AllDifferent(X_0,j, X_1,j, ..., X_8,j)
+  - For each 3×3 box: AllDifferent over the 9 cells in that box
+
+
+2. CONSTRAINT GRAPH (PEERS)
+--------------------------------------------------------------------------------
+
+Each cell (i, j) has "peers": all cells that share a row, column, or 3×3 box.
+  - Row peers:    (i, 0), (i, 1), ..., (i, 8) excluding (i, j)
+  - Column peers: (0, j), (1, j), ..., (8, j) excluding (i, j)
+  - Box peers:    All 9 cells in the same 3×3 region, excluding (i, j)
+
+Total: Each cell has 20 peers (8 in row + 8 in column + 4 more in box, avoiding duplicates).
+
+Constraint arcs: For each pair (cell, peer), there exists a binary constraint that
+the two cells must have different values.
+
+
+3. IMPLEMENTED CSP TECHNIQUES
+--------------------------------------------------------------------------------
+
+3.1 AC-3 (Arc Consistency)
+  - Purpose: Prune domains before search by enforcing consistency
+  - Method:  If a cell has exactly one value v, remove v from all peers' domains
+  - Queue:   Process cells with single-value domains; when a peer's domain shrinks
+             to one value, add it to the queue
+  - Result:  Fewer choices during search; may solve trivial puzzles without backtracking
+
+3.2 MRV (Minimum Remaining Values)
+  - Purpose: Choose which variable to assign next
+  - Method:  Select the unassigned cell with the smallest domain (fewest legal values)
+  - Benefit: Reduces branching factor; fail fast when a cell has no options
+
+3.3 Forward Checking
+  - Purpose: Detect dead-ends early
+  - Method:  When assigning value v to cell C, remove v from every peer's domain
+  - On failure: Restore removed values before backtracking
+
+3.4 LCV (Least Constraining Value)
+  - Purpose: Choose which value to try first for a variable
+  - Method:  Order values by how many peer options they remove; try least
+             constraining first
+  - Benefit: Leaves more flexibility for future assignments
+
+
+4. AI SOLVE: CONFLICT DETECTION & BACKTRACK ANALYSIS
+--------------------------------------------------------------------------------
+
+When the user clicks "AI Solve" with possible errors in their input:
+
+Step 1 - Find Conflicts:
+  - Compare current board to original puzzle (prefilled cells)
+  - For each user-filled cell: check if its value duplicates in row, column, or box
+  - Record: cell (row, col), value, reason (e.g. "duplicate 5 in row 3")
+
+Step 2 - Clear Conflicting Cells:
+  - Set conflicting user cells to empty (0)
+  - Keep prefilled cells unchanged
+
+Step 3 - Solve with CSP:
+  - Build domains from cleaned board
+  - Run AC-3, then backtrack with MRV + forward checking + LCV
+  - Return complete solution
+
+Step 4 - Report:
+  - Return solution and list of conflicts that were found and cleared
+
+
+5. REQUIREMENTS SUMMARY
+--------------------------------------------------------------------------------
+
+Functional Requirements:
+  [x] Variables: 81 cells
+  [x] Domains: {1..9} for empty, {v} for prefilled
+  [x] Constraints: AllDifferent on rows, columns, 3×3 boxes
+  [x] AC-3 arc consistency
+  [x] MRV variable ordering
+  [x] Forward checking
+  [x] LCV value ordering
+  [x] Conflict detection for user errors
+  [x] Backtrack analysis and resolution
+
+Performance:
+  - Typical 9×9 Sudoku: solved in milliseconds with CSP
+  - Hard puzzles: CSP significantly reduces search compared to naive backtracking
+
+================================================================================
