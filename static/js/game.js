@@ -157,12 +157,15 @@ function renderGrid(puzzleData, solutionData = null) {
                     cell.classList.remove('error');
                     clearMessage();
 
+<<<<<<< HEAD
                     // Lock the cell: prevent further changes
                     e.target.readOnly = true;
                     cell.classList.remove('user-input');
                     cell.classList.add('locked');
                     e.target.blur(); // Remove focus to indicate completion
 
+=======
+>>>>>>> df79339114ad054e2ed50a1d2aedb3b3a283c5f1
                     // Visual feedback for correct input
                     cell.classList.add('success-flash');
                     setTimeout(() => cell.classList.remove('success-flash'), 500);
